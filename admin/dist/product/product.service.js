@@ -27,6 +27,9 @@ let ProductService = class ProductService {
     async create(data) {
         return this.productRepository.save(data);
     }
+    async get(id) {
+        return this.productRepository.findOneBy({ id });
+    }
 };
 ProductService = __decorate([
     (0, common_1.Injectable)(),

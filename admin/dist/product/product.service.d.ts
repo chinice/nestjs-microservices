@@ -5,4 +5,5 @@ export declare class ProductService {
     constructor(productRepository: Repository<Product>);
     all(): Promise<Product[]>;
     create(data: any): Promise<Product>;
+    get(id: number): Promise<Product | undefined>;
 }

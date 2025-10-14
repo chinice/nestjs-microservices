@@ -38,6 +38,14 @@ let ProductController = class ProductController {
             throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async get(id) {
+        try {
+            return this.productService.get(id);
+        }
+        catch (error) {
+            throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 };
 __decorate([
     (0, common_1.Get)(),
@@ -53,6 +61,13 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ProductController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductController.prototype, "get", null);
 ProductController = __decorate([
     (0, common_1.Controller)('products'),
     __metadata("design:paramtypes", [product_service_1.ProductService])

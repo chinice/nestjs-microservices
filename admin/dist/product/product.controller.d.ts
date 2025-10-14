@@ -4,4 +4,5 @@ export declare class ProductController {
     constructor(productService: ProductService);
     all(): Promise<import("./product.entity").Product[]>;
     create(title: string, image: string): Promise<import("./product.entity").Product>;
+    get(id: number): Promise<import("./product.entity").Product>;
 }
