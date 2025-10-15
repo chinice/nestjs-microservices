@@ -1,4 +1,4 @@
-name: Run Tests for All Microservices Sequentially
+name: Run Tests Sequentially
 
 on:
   push:
@@ -10,50 +10,30 @@ on:
 
 jobs:
   test:
-    name: Run Tests Sequentially
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 22.1.0
 
-      # ---------------- ADMIN PROJECT ----------------
-      - name: Cache npm dependencies for admin
-        uses: actions/cache@v3
-        with:
-          path: ./microservices/admin/node_modules
-          key: ${{ runner.os }}-admin-node-${{ hashFiles('microservices/admin/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-admin-node-
-
+      # ---- Admin ----
       - name: Install dependencies for admin
-        working-directory: ./microservices/admin
+        working-directory: ./admin
         run: npm install
 
       - name: Run tests for admin
-        working-directory: ./microservices/admin
+        working-directory: ./admin
         run: npm run test
 
-      # ---------------- NAME PROJECT ----------------
-      - name: Cache npm dependencies for name
-        uses: actions/cache@v3
-        with:
-          path: ./microservices/name/node_modules
-          key: ${{ runner.os }}-name-node-${{ hashFiles('microservices/main/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-name-node-
-
+      # ---- Main ----
       - name: Install dependencies for main
-        working-directory: ./microservices/main
+        working-directory: ./main
         run: npm install
 
       - name: Run tests for name
-        working-directory: ./microservices/main
+        working-directory: ./main
         run: npm run test
