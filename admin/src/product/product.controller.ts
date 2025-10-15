@@ -33,8 +33,7 @@ export class ProductController {
   @Get()
   async all() {
     try {
-      this.client.emit('hello', 'Hello from RabbitMQ');
-      return this.productService.all();
+      return await this.productService.all();
     } catch (error) {
       //Log in error for debugging and throw an exception error
       throw new HttpException(
@@ -76,7 +75,7 @@ export class ProductController {
   @Get(':id')
   async get(@Param('id') id: number) {
     try {
-      return this.productService.get(id);
+      return await this.productService.get(id);
     } catch (error) {
       throw new HttpException(
         'Error encountered while creating product',
@@ -150,7 +149,7 @@ export class ProductController {
       });
     } catch (error) {
       throw new HttpException(
-        'Error encountered while creating product',
+        'Error encountered while liking product',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
