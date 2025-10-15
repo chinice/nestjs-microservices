@@ -23,7 +23,7 @@ export class ProductController {
   @Get()
   async all() {
     try {
-      return this.productService.all();
+      return await this.productService.all();
     } catch (error) {
       throw new HttpException(
         'Error encountered while retrieving products',
@@ -45,7 +45,7 @@ export class ProductController {
           console.log(res);
         });
       const product = await this.productService.findOne(id);
-      return this.productService.likes(id, { likes: product.likes + 1 });
+      return await this.productService.likes(id, { likes: product.likes + 1 });
     } catch (error) {
       throw new HttpException(
         'Error encountered while creating product',

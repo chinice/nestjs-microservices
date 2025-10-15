@@ -1,0 +1,40 @@
+name: Run Tests for Admin & Name Projects
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Tests for All Microservices
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        project: [admin, main]  # loop through both projects
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # 3. Install dependencies for the project
+      - name: Install dependencies
+        working-directory: ./microservices/${{ matrix.project }}
+        run: npm install
+
+      # 4. Run tests
+      - name: Run tests
+        working-directory: ./microservices/${{ matrix.project }}
+        run: npm run test

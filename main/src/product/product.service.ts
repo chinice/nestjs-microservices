@@ -39,7 +39,6 @@ export class ProductService {
    * @param data
    */
   async likes(id: number, data: any) {
-    console.log(data);
     return this.productModel.findOneAndUpdate({ id }, data, { new: true });
   }
 
