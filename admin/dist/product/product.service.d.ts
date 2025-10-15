@@ -6,4 +6,6 @@ export declare class ProductService {
     all(): Promise<Product[]>;
     create(data: any): Promise<Product>;
     get(id: number): Promise<Product | undefined>;
+    update(id: number, data: any): Promise<any>;
+    delete(id: number): Promise<any>;
 }

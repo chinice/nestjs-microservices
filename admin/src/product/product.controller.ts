@@ -1,5 +1,17 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Put } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Controller('products')
 export class ProductController {
@@ -7,8 +19,12 @@ export class ProductController {
    * Constructor for the product controller class
    *
    * @param productService
+   * @param client
    */
-  constructor(private productService: ProductService) {}
+  constructor(
+    private productService: ProductService,
+    @Inject('PRODUCT_SERVICE') private readonly client: ClientProxy,
+  ) {}
 
   /**
    * Function to get all products
@@ -17,6 +33,7 @@ export class ProductController {
   @Get()
   async all() {
     try {
+      this.client.emit('hello', 'Hello from RabbitMQ');
       return this.productService.all();
     } catch (error) {
       //Log in error for debugging and throw an exception error
@@ -35,10 +52,15 @@ export class ProductController {
   @Post()
   async create(@Body('title') title: string, @Body('image') image: string) {
     try {
-      return this.productService.create({
+      const product = await this.productService.create({
         title,
         image,
       });
+
+      //Send data to microservice
+      this.client.emit('product_created', product);
+      //Return product
+      return product;
     } catch (error) {
       throw new HttpException(
         'Error encountered while creating product',
@@ -76,10 +98,16 @@ export class ProductController {
     @Body('image') image: string,
   ) {
     try {
-      return this.productService.update(id, {
+      await this.productService.update(id, {
         title,
         image,
       });
+      //Get updated product by id
+      const product = await this.productService.get(id);
+      //Emit product updated to microservice
+      this.client.emit('product_updated', product);
+      //Return updated product
+      return product;
     } catch (error) {
       throw new HttpException(
         'Error encountered while creating product',
@@ -90,13 +118,36 @@ export class ProductController {
 
   /**
    * Function to delete a product
-   *
    * @param id
    */
   @Delete(':id')
   async delete(@Param('id') id: number) {
     try {
-      return this.productService.delete(id);
+      await this.productService.delete(id);
+
+      this.client.emit('product_deleted', id);
+
+      return true;
+    } catch (error) {
+      throw new HttpException(
+        'Error encountered while creating product',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Function to update product likes
+   * @param id
+   */
+  @Post(':id/like')
+  async like(@Param('id') id: number) {
+    try {
+      const product = await this.productService.get(id);
+
+      return this.productService.update(id, {
+        likes: product.likes + 1,
+      });
     } catch (error) {
       throw new HttpException(
         'Error encountered while creating product',

@@ -30,6 +30,12 @@ let ProductService = class ProductService {
     async get(id) {
         return this.productRepository.findOneBy({ id });
     }
+    async update(id, data) {
+        return this.productRepository.update(id, data);
+    }
+    async delete(id) {
+        return this.productRepository.delete(id);
+    }
 };
 ProductService = __decorate([
     (0, common_1.Injectable)(),

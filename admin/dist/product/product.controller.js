@@ -15,12 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductController = void 0;
 const common_1 = require("@nestjs/common");
 const product_service_1 = require("./product.service");
+const microservices_1 = require("@nestjs/microservices");
 let ProductController = class ProductController {
-    constructor(productService) {
+    constructor(productService, client) {
         this.productService = productService;
+        this.client = client;
     }
     async all() {
         try {
+            this.client.emit('hello', 'Hello from RabbitMQ');
             return this.productService.all();
         }
         catch (error) {
@@ -29,10 +32,12 @@ let ProductController = class ProductController {
     }
     async create(title, image) {
         try {
-            return this.productService.create({
+            const product = await this.productService.create({
                 title,
                 image,
             });
+            this.client.emit('product_created', product);
+            return product;
         }
         catch (error) {
             throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
@@ -41,6 +46,41 @@ let ProductController = class ProductController {
     async get(id) {
         try {
             return this.productService.get(id);
+        }
+        catch (error) {
+            throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async update(id, title, image) {
+        try {
+            await this.productService.update(id, {
+                title,
+                image,
+            });
+            const product = await this.productService.get(id);
+            this.client.emit('product_updated', product);
+            return product;
+        }
+        catch (error) {
+            throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async delete(id) {
+        try {
+            await this.productService.delete(id);
+            this.client.emit('product_deleted', id);
+            return true;
+        }
+        catch (error) {
+            throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async like(id) {
+        try {
+            const product = await this.productService.get(id);
+            return this.productService.update(id, {
+                likes: product.likes + 1,
+            });
         }
         catch (error) {
             throw new common_1.HttpException('Error encountered while creating product', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
@@ -68,9 +108,34 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ProductController.prototype, "get", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('title')),
+    __param(2, (0, common_1.Body)('image')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, String]),
+    __metadata("design:returntype", Promise)
+], ProductController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductController.prototype, "delete", null);
+__decorate([
+    (0, common_1.Post)(':id/like'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductController.prototype, "like", null);
 ProductController = __decorate([
     (0, common_1.Controller)('products'),
-    __metadata("design:paramtypes", [product_service_1.ProductService])
+    __param(1, (0, common_1.Inject)('PRODUCT_SERVICE')),
+    __metadata("design:paramtypes", [product_service_1.ProductService,
+        microservices_1.ClientProxy])
 ], ProductController);
 exports.ProductController = ProductController;
 //# sourceMappingURL=product.controller.js.map
