@@ -20,8 +20,8 @@ jobs:
         with:
           node-version: 22.1.0
 
-      # ---- Admin ----
-      - name: Install dependencies for admin
+      # ---- Admin Service ----
+      - name: Install dependencies for admin service
         working-directory: ./admin
         run: npm install
 
@@ -29,11 +29,20 @@ jobs:
         working-directory: ./admin
         run: npm run test
 
-      # ---- Main ----
-      - name: Install dependencies for main
+      # ---- Main Service ----
+      - name: Install dependencies for main service
         working-directory: ./main
         run: npm install
 
       - name: Run tests for name
         working-directory: ./main
+        run: npm run test
+
+      # ---- Auth Service ----
+      - name: Install dependencies for auth service
+        working-directory: ./auth-service
+        run: npm install
+
+      - name: Run tests for auth service
+        working-directory: ./auth-service
         run: npm run test
