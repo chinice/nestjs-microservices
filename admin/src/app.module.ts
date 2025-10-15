@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { ProductModule } from './product/product.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
 
 @Module({
   imports: [
@@ -25,8 +27,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       }),
     }),
     ProductModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, CloudinaryProvider],
 })
 export class AppModule {}

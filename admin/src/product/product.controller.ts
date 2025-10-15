@@ -9,9 +9,13 @@ import {
   Param,
   Post,
   Put,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ClientProxy } from '@nestjs/microservices';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Controller('products')
 export class ProductController {
@@ -20,10 +24,12 @@ export class ProductController {
    *
    * @param productService
    * @param client
+   * @param cloudinaryService
    */
   constructor(
     private productService: ProductService,
     @Inject('PRODUCT_SERVICE') private readonly client: ClientProxy,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   /**
@@ -47,13 +53,20 @@ export class ProductController {
    * Function to create a new product
    * @param title
    * @param image
+   * @param file
    */
   @Post()
-  async create(@Body('title') title: string, @Body('image') image: string) {
+  @UseInterceptors(FileInterceptor('file'))
+  async create(
+    @Body('title') title: string,
+    @Body('image') image: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     try {
+      const imageUrl = await this.cloudinaryService.uploadFile(file);
       const product = await this.productService.create({
         title,
-        image,
+        image: imageUrl.secure_url,
       });
 
       //Send data to microservice
