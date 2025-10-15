@@ -21,7 +21,7 @@ export class CloudinaryService {
     file: Express.Multer.File,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
     return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
+      const uploadStream = this.cloudinaryInstance.uploader.upload_stream(
         { resource_type: 'auto' },
         (error, result) => {
           if (error) return reject(error);
