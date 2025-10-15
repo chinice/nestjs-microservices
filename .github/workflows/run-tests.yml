@@ -1,4 +1,4 @@
-name: Run Tests for Admin & Name Projects
+name: Run Tests for All Microservices Sequentially
 
 on:
   push:
@@ -10,12 +10,8 @@ on:
 
 jobs:
   test:
-    name: Run Tests for All Microservices
+    name: Run Tests Sequentially
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        project: [admin, main]  # loop through both projects
 
     steps:
       # 1. Checkout repository
@@ -26,15 +22,38 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 22.1.0
-          cache: 'npm'
+          node-version: 20
 
-      # 3. Install dependencies for the project
-      - name: Install dependencies
-        working-directory: ./microservices/${{ matrix.project }}
+      # ---------------- ADMIN PROJECT ----------------
+      - name: Cache npm dependencies for admin
+        uses: actions/cache@v3
+        with:
+          path: ./microservices/admin/node_modules
+          key: ${{ runner.os }}-admin-node-${{ hashFiles('microservices/admin/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-admin-node-
+
+      - name: Install dependencies for admin
+        working-directory: ./microservices/admin
         run: npm install
 
-      # 4. Run tests
-      - name: Run tests
-        working-directory: ./microservices/${{ matrix.project }}
+      - name: Run tests for admin
+        working-directory: ./microservices/admin
+        run: npm run test
+
+      # ---------------- NAME PROJECT ----------------
+      - name: Cache npm dependencies for name
+        uses: actions/cache@v3
+        with:
+          path: ./microservices/name/node_modules
+          key: ${{ runner.os }}-name-node-${{ hashFiles('microservices/main/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-name-node-
+
+      - name: Install dependencies for main
+        working-directory: ./microservices/main
+        run: npm install
+
+      - name: Run tests for name
+        working-directory: ./microservices/main
         run: npm run test
