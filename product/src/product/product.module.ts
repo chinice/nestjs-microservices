@@ -14,9 +14,7 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
         name: 'PRODUCT_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: [
-            'amqps://lnelmkdk:cU9yCRdQUo7Osr1O-jbXbCXcRSEGJl8u@campbell.lmq.cloudamqp.com/lnelmkdk',
-          ],
+          urls: [`${process.env.RABBITMQ_URL}`],
           queue: 'main_queue',
           queueOptions: {
             durable: false,
