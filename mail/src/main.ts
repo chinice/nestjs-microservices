@@ -12,7 +12,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [configService.get<string>('RABBITMQ_URL')],
-      queue: 'mail_queue',
+      queue: 'mail_queue', 
       queueOptions: {
         durable: false,
       },
