@@ -1,9 +1,8 @@
-import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
+import {BadRequestException, Inject, Injectable, UnauthorizedException} from '@nestjs/common';
 import {InjectRepository} from "@nestjs/typeorm";
 import {User} from "./user.entity";
 import {Repository} from "typeorm";
 import {JwtService} from "@nestjs/jwt";
-import {MailerService} from "@nestjs-modules/mailer";
 import {RegisterDto} from "./dto/register.dto";
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -13,8 +12,7 @@ import {LoginDto} from "./dto/login.dto";
 export class UserService {
     constructor(
         @InjectRepository(User) private readonly userRepository: Repository<User>,
-        private jwtService: JwtService,
-        private mailerService: MailerService
+        private jwtService: JwtService
     ) {}
 
     /**
@@ -41,14 +39,8 @@ export class UserService {
             lastName,
             emailVerificationToken
         });
-        await this.userRepository.save(user);
 
-        //Send verification email
-        await this.mailerService.sendMail({
-            to: email,
-            subject: 'Email Verification',
-            text: `Click here to verify your email address: ${process.env.BASE_URL}/auth/verify-email?token=${emailVerificationToken}`,
-        });
+        await this.userRepository.save(user);
 
         const payload = { sub: user.id, email: user.email };
 
@@ -59,7 +51,7 @@ export class UserService {
         user.refreshToken = refreshToken;
         await this.userRepository.save(user);
 
-        return { accessToken, refreshToken };
+        return { accessToken, refreshToken, emailVerificationToken };
     }
 
     /**
@@ -85,7 +77,25 @@ export class UserService {
         const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
+        // Save refresh token in DB
+        user.refreshToken = refreshToken;
+        await this.userRepository.save(user);
+
         return { accessToken, refreshToken };
+    }
+
+    /**
+     * Function to log out
+     * @param userId
+     */
+    async logout(userId: number) {
+        const user = await this.userRepository.findOne({ where: { id: userId } });
+        if (!user) throw new BadRequestException('User not found');
+
+        user.refreshToken = null; // assuming you store it
+        await this.userRepository.save(user);
+
+        return { message: 'Logged out successfully' };
     }
 
     /**
@@ -118,11 +128,7 @@ export class UserService {
         user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
         await this.userRepository.save(user);
 
-        await this.mailerService.sendMail({
-            to: email,
-            subject: 'Password Reset',
-            text: `Click here to reset your password: ${process.env.BASE_URL}/auth/reset-password?token=${token}`,
-        });
+
 
         return { message: 'Password reset email sent' };
     }
@@ -147,19 +153,5 @@ export class UserService {
         await this.userRepository.save(user);
 
         return { message: 'Password reset successfully' };
-    }
-
-    /**
-     * Function to log out
-     * @param userId
-     */
-    async logout(userId: number) {
-        const user = await this.userRepository.findOne({ where: { id: userId } });
-        if (!user) throw new BadRequestException('User not found');
-
-        user.refreshToken = null; // assuming you store it
-        await this.userRepository.save(user);
-
-        return { message: 'Logged out successfully' };
     }
 }

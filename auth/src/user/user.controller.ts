@@ -1,11 +1,27 @@
-import {Body, Controller, HttpException, HttpStatus, Post, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, HttpException, HttpStatus, Inject, Post, Req, UseGuards} from '@nestjs/common';
 import { UserService } from "./user.service";
 import { RegisterDto } from "./dto/register.dto";
 import {LoginDto} from "./dto/login.dto";
+import {ClientProxy} from "@nestjs/microservices";
 
 @Controller('auth')
 export class UserController {
-    constructor(private userService: UserService) {}
+    constructor(
+        private userService: UserService,
+        @Inject('USER_SERVICE') private readonly client: ClientProxy
+    ) {}
+
+    /**
+     * Check my Rabbit MQ connection
+     */
+    async onModuleInit() {
+        try {
+            await this.client.connect();
+            console.log('✅ RabbitMQ Client connected successfully!');
+        } catch (error) {
+            console.error('❌ Failed to connect to RabbitMQ:', error.message);
+        }
+    }
 
     /**
      * Function to log out
@@ -14,11 +30,22 @@ export class UserController {
     @Post('register')
     async register(@Body() data: RegisterDto) {
         try {
-            return await this.userService.register(data);
+            const result = await this.userService.register(data);
+            const payload = {
+                to: data.email,
+                templateId: 41871910,
+                templateModel: {
+                    name: data.firstName,
+                    link: `http://localhost:3002/api/auth/verify?token=${result.emailVerificationToken}`
+                }
+            };
+            //Send verification email to the email service to dispatch
+            this.client.emit('send_email', payload);
+            return { accessToken: result.accessToken, refreshToken: result.refreshToken };
         } catch (error) {
             throw new HttpException(
-                'Error encountered while registering',
-                HttpStatus.INTERNAL_SERVER_ERROR,
+                error.message,
+                HttpStatus.BAD_REQUEST,
             );
         }
     }
@@ -33,8 +60,8 @@ export class UserController {
             return await this.userService.login(data);
         } catch (error) {
             throw new HttpException(
-                'Error encountered during log in',
-                HttpStatus.INTERNAL_SERVER_ERROR,
+                error.message,
+                HttpStatus.UNAUTHORIZED,
             );
         }
     }
@@ -79,10 +106,7 @@ export class UserController {
      * @param newPassword
      */
     @Post('reset-password')
-    async resetPassword(
-        @Body('token') token: string,
-        @Body('newPassword') newPassword: string,
-    ) {
+    async resetPassword(@Body('token') token: string, @Body('newPassword') newPassword: string) {
         try {
             return await this.userService.resetPassword(token, newPassword);
         } catch (error) {
@@ -102,7 +126,7 @@ export class UserController {
     async logout(@Req() req: any) {
         try {
             // req.user.sub comes from validated JWT payload
-            return this.userService.logout(req.user.sub);
+            return await this.userService.logout(req.user.sub);
         } catch (error) {
             throw new HttpException(
                 'Error encountered while logging out',

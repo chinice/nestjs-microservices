@@ -2,42 +2,44 @@ import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from "./user.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ClientsModule, Transport } from "@nestjs/microservices";
-import { JwtService } from "@nestjs/jwt";
-import { MailerModule } from "@nestjs-modules/mailer";
+import {ClientProviderOptions, ClientsModule, Transport} from "@nestjs/microservices";
+import { JwtModule } from "@nestjs/jwt";
 import { UserController } from './user.controller';
+import {ConfigModule, ConfigService} from "@nestjs/config";
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forFeature([User]),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
-        name: 'AUTH_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [`${process.env.RABBITMQ_URL}`],
-          queue: 'auth_queue',
-          queueOptions: {
-            durable: false,
+        name: 'USER_SERVICE',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService): {
+          options: { urls: string[]; queueOptions: { durable: boolean }; queue: string };
+          transport: Transport.RMQ
+        } => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672'],
+            queue: 'mail_queue',
+            queueOptions: {
+              durable: false,
+            },
           },
-        },
+        })
       },
     ]),
-    MailerModule.forRoot({
-      transport: {
-        host: process.env.MAIL_HOST,
-        port: process.env.MAIL_PORT,
-        auth: {
-          user: process.env.MAIL_USER,
-          pass: process.env.MAIL_PASSWORD,
-        },
-      },
-      defaults: {
-        from: process.env.MAIL_FROM,
-      },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'), // read from env
+      }),
     }),
   ],
-  providers: [UserService, JwtService],
+  providers: [UserService],
   controllers: [UserController]
 })
 export class UserModule {}

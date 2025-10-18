@@ -1,5 +1,6 @@
-import {Column, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 
+@Entity()
 export class User {
     @PrimaryGeneratedColumn()
     id: number
@@ -22,17 +23,17 @@ export class User {
     @Column({ default: false })
     isEmailVerified: boolean;
 
-    @Column({ nullable: true })
-    emailVerificationToken: null | string;
+    @Column({ type: 'varchar', nullable: true })
+    emailVerificationToken?: string | null;
 
-    @Column({ nullable: true })
-    resetPasswordToken: null | string;
+    @Column({ type: 'varchar', nullable: true })
+    resetPasswordToken?: string | null;
 
-    @Column({ nullable: true })
-    resetPasswordExpires: Date | null;
+    @Column({ type: 'timestamptz', nullable: true })
+    resetPasswordExpires?: Date | null;
 
-    @Column({ nullable: true })
-    refreshToken: string | null; // new column
+    @Column({ type: 'varchar', nullable: true })
+    refreshToken?: string | null; // new column
 
     @CreateDateColumn()
     createdAt: Date;
