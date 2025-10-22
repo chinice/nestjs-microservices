@@ -20,24 +20,6 @@ jobs:
         with:
           node-version: 22.1.0
 
-      # ---- Product Service Test ----
-      - name: Install dependencies for Product Service
-        working-directory: ./product
-        run: npm install
-
-      - name: Run tests for Product Service
-        working-directory: ./product
-        run: npm run test
-
-      # ---- Main Service Test ----
-      - name: Install dependencies for Main Service
-        working-directory: ./main
-        run: npm install
-
-      - name: Run tests for Main Service
-        working-directory: ./main
-        run: npm run test
-
       # ---- Authentication Service Test ----
       - name: Install dependencies for Authentication Service
         working-directory: ./auth
@@ -54,4 +36,13 @@ jobs:
 
       - name: Run tests for Email Service
         working-directory: ./mail
+        run: npm run test
+
+      # ---- Product Service Test ----
+      - name: Install dependencies for Product Service
+        working-directory: ./product
+        run: npm install
+
+      - name: Run tests for Product Service
+        working-directory: ./product
         run: npm run test
