@@ -175,9 +175,26 @@ describe('UserService', () => {
 
       const result = await service.requestPasswordReset('test@example.com');
 
+      // Check repository calls
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { email: 'test@example.com' } });
+      expect(userRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        resetPasswordToken: expect.any(String),
+        resetPasswordExpires: expect.any(Date),
+      }));
+
+      // Check token and expiry
       expect(user.resetPasswordToken).toBeDefined();
+      expect(typeof user.resetPasswordToken).toBe('string');
       expect(user.resetPasswordExpires).toBeInstanceOf(Date);
-      expect(result).toEqual({ message: 'Password reset email sent' });
+
+      // Check result matches actual return structure
+      expect(result).toEqual({
+        message: 'Password reset email sent',
+        data: {
+          user,
+          token: expect.any(String),
+        },
+      });
     });
 
     it('should throw BadRequestException if user not found', async () => {

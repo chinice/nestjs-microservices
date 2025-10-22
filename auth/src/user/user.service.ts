@@ -130,7 +130,7 @@ export class UserService {
 
 
 
-        return { message: 'Password reset email sent' };
+        return { message: 'Password reset email sent', data: { user, token } };
     }
 
     /**

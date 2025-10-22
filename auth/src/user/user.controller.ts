@@ -36,7 +36,7 @@ export class UserController {
                 templateId: 41871910,
                 templateModel: {
                     name: data.firstName,
-                    link: `http://localhost:3002/api/auth/verify?token=${result.emailVerificationToken}`
+                    link: `${process.env.BASE_URL}/api/auth/verify?token=${result.emailVerificationToken}`
                 }
             };
             //Send verification email to the email service to dispatch
@@ -91,7 +91,20 @@ export class UserController {
     @Post('request-password-reset')
     async requestPasswordReset(@Body('email') email: string) {
         try {
-            return await this.userService.requestPasswordReset(email);
+            const result = await this.userService.requestPasswordReset(email);
+            //payload to send email
+            const payload = {
+                to: result.data.user.email,
+                templateId: 41920429,
+                templateModel: {
+                    name: result.data.user.firstName,
+                    link: `${process.env.BASE_URL}/api/auth/password-reset?token=${result.data.token}`
+                }
+            };
+            //Send verification email to the email service to dispatch
+            this.client.emit('send_email', payload);
+
+            return { message: result.message };
         } catch (error) {
             throw new HttpException(
                 'Error encountered while requesting password reset',

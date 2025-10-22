@@ -36,7 +36,7 @@ describe('UserController', () => {
         },
       ],
     }).compile();
-
+    process.env.BASE_URL = 'http://localhost:3002';
     controller = module.get<UserController>(UserController);
     userService = module.get(UserService);
     clientProxy = module.get('USER_SERVICE');
@@ -148,10 +148,37 @@ describe('UserController', () => {
   //REQUEST PASSWORD RESET
   describe('requestPasswordReset', () => {
     it('should request password reset successfully', async () => {
-      userService.requestPasswordReset.mockResolvedValue({ message: 'Email sent' });
+      const mockUser = { email: 'test@example.com', firstName: 'John' };
+      const mockToken = 'mocked-token';
+      const mockResult = {
+        message: 'Password reset email sent',
+        data: { user: mockUser, token: mockToken },
+      } as any;
+
+      // Mock dependencies
+      userService.requestPasswordReset.mockResolvedValue(mockResult);
+      clientProxy.emit.mockReturnValue(of (undefined)); // mock event emitter
+
       const result = await controller.requestPasswordReset('test@example.com');
+
+      // Check service was called correctly
       expect(userService.requestPasswordReset).toHaveBeenCalledWith('test@example.com');
-      expect(result).toEqual({ message: 'Email sent' });
+
+      // Verify email payload emitted
+      expect(clientProxy.emit).toHaveBeenCalledWith(
+          'send_email',
+          expect.objectContaining({
+            to: mockUser.email,
+            templateId: 41920429,
+            templateModel: expect.objectContaining({
+              name: mockUser.firstName,
+              link: `${process.env.BASE_URL}/api/auth/password-reset?token=${mockToken}`,
+            }),
+          }),
+      );
+
+      // Verify return value
+      expect(result).toEqual({ message: mockResult.message });
     });
 
     it('should throw HttpException on failure', async () => {
